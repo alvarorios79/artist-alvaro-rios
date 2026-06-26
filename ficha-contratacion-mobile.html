@@ -327,7 +327,7 @@
           <div class="st">Géneros y Estilo</div>
           <div class="badges" style="margin-bottom:19px;">
             <div class="badge hl">Bachata</div><div class="badge">Cumbia</div>
-            <div class="badge">Salsa</div><div class="badge">Romántico</div>
+            <div class="badge">Tropical</div><div class="badge">Romántico</div>
             <div class="badge">Bailable</div><div class="badge">Familiar</div>
           </div>
           <div class="st">Show en Vivo</div>
@@ -433,6 +433,29 @@ async function loadImgB64(url) {
   });
 }
 
+// Recorta imagen simulando object-fit:cover con posición dada
+async function cropImg(url, wMM, hMM, posX = 0.5, posY = 0.2) {
+  const b64 = await loadImgB64(url);
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const PPM = 3.7795 * 2; // 2× para calidad
+      const tw = Math.round(wMM * PPM);
+      const th = Math.round(hMM * PPM);
+      const canvas = document.createElement('canvas');
+      canvas.width = tw; canvas.height = th;
+      const ctx = canvas.getContext('2d');
+      const scale = Math.max(tw / img.width, th / img.height);
+      const sw = img.width * scale;
+      const sh = img.height * scale;
+      ctx.filter = 'brightness(0.9)';
+      ctx.drawImage(img, -(sw - tw) * posX, -(sh - th) * posY, sw, sh);
+      resolve(canvas.toDataURL('image/jpeg', 0.88));
+    };
+    img.src = b64;
+  });
+}
+
 async function processHeroB64(url) {
   const b64 = await loadImgB64(url);
   return new Promise(resolve => {
@@ -475,10 +498,9 @@ async function generarPDF() {
     const PLATA  = [184, 190, 199];
     const TEXTO  = [204, 204, 204];
 
-    // Cargar imágenes en paralelo
-    const [heroB64, showB64, logoB64] = await Promise.all([
+    // Cargar imágenes (show se procesa después cuando conocemos el alto disponible)
+    const [heroB64, logoB64] = await Promise.all([
       processHeroB64('ficha-de-contratacion.png'),
-      loadImgB64('Fotos/2Y0A5026.JPG'),
       loadImgB64('logo-sin-fondo.png'),
     ]);
 
@@ -527,28 +549,29 @@ async function generarPDF() {
       doc.text(sal, 15, 20.5);
     }
 
-    // Texto hero inferior
-    const HB = nombre ? 50 : 57;
-    fnt('normal', 5); tc(ROJO);
+    // Texto hero inferior — posición desde el fondo del hero (bottom: 7mm Mac)
+    // Con nombre: el bloque destinatario ocupa y=4–25, así que bajamos el contenido
+    const HB = nombre ? 44 : 52;
+    fnt('bold', 6.5); tc(ROJO);
     doc.text('PROPUESTA ARTÍSTICA · CONTRATACIÓN', 14, HB);
 
-    // Nombre: "Álvaro" blanco + "Ríos" rojo
-    doc.setFont('times', 'bold'); doc.setFontSize(30); tc(BLANCO);
+    // Nombre: "Álvaro" blanco + "Ríos" rojo  (36pt ≈ 44px del HTML Mac)
+    doc.setFont('times', 'bold'); doc.setFontSize(36); tc(BLANCO);
     const wAlv = doc.getTextWidth('Álvaro ');
-    doc.text('Álvaro ', 14, HB + 10);
+    doc.text('Álvaro ', 14, HB + 13);
     tc(ROJO);
-    doc.text('Ríos', 14 + wAlv, HB + 10);
+    doc.text('Ríos', 14 + wAlv, HB + 13);
 
-    // Badge dorado
-    fnt('bold', 5.5);
+    // Badge dorado — más grande
+    fnt('bold', 7);
     const badgeTxt = 'EL BACHATERO #1 DE COLOMBIA';
-    const badgeW = doc.getTextWidth(badgeTxt) + 5;
-    fc(DORADO); doc.roundedRect(14, HB + 12, badgeW, 4.2, 0.8, 0.8, 'F');
-    tc(NEGRO); doc.text(badgeTxt, 16.5, HB + 15.2);
+    const badgeW = doc.getTextWidth(badgeTxt) + 6;
+    fc(DORADO); doc.roundedRect(14, HB + 15.5, badgeW, 5.5, 1, 1, 'F');
+    tc(NEGRO); doc.text(badgeTxt, 17, HB + 19.5);
 
     // Subtítulo
-    fnt('normal', 6.5); tc(PLATA);
-    doc.text('BACHATA · CUMBIA   |   COLOMBIA', 14, HB + 21);
+    fnt('normal', 9); tc(PLATA);
+    doc.text('BACHATA · CUMBIA   |   COLOMBIA', 14, HB + 24);
 
     // ════════════════════════════════════════════
     // 2. STATS BAR  (82–95mm)
@@ -594,7 +617,7 @@ async function generarPDF() {
 
     // Géneros y Estilo
     lY = sectionTitle('GÉNEROS Y ESTILO', LX, lY, LW);
-    const GENRES = [['Bachata',true],['Cumbia',false],['Salsa',false],['Romántico',false],['Bailable',false],['Familiar',false]];
+    const GENRES = [['Bachata',true],['Cumbia',false],['Tropical',false],['Romántico',false],['Bailable',false],['Familiar',false]];
     let gx = LX, gy = lY;
     fnt('bold', 5.5);
     for (const [name, hl] of GENRES) {
@@ -612,12 +635,13 @@ async function generarPDF() {
     }
     lY = gy + 7.5;
 
-    // Show en Vivo
+    // Show en Vivo — foto ocupa todo el espacio restante con aspect ratio correcto
     lY = sectionTitle('SHOW EN VIVO', LX, lY, LW);
-    // Foto llena todo el espacio restante hasta el footer
     const photoMaxH = 268 - lY;
     if (photoMaxH > 5) {
-      doc.addImage(showB64, 'JPEG', LX, lY, LW, photoMaxH);
+      // Procesar con canvas: object-fit:cover, center 20%
+      const showCropped = await cropImg('Fotos/2Y0A5026.JPG', LW, photoMaxH, 0.5, 0.2);
+      doc.addImage(showCropped, 'JPEG', LX, lY, LW, photoMaxH);
     }
 
     // ── COLUMNA DERECHA ──────────────────────────
@@ -717,13 +741,24 @@ async function generarPDF() {
     doc.link(RX, rY, RW, 6, { url: 'https://www.alvarorios.com' });
     rY += 8;
 
-    // App
+    // App — con botones Google Play y App Store
     fc([28, 15, 12]); dc([100, 80, 30]); doc.setLineWidth(0.3);
-    doc.roundedRect(RX, rY, RW, 13, 1, 1, 'FD');
-    fnt('bold', 6); tc(DORADO);
-    doc.text('APP ÁLVARO RÍOS — ¡Descárgala Gratis!', RX + RW / 2, rY + 5, { align: 'center' });
+    doc.roundedRect(RX, rY, RW, 17, 1, 1, 'FD');
+    fnt('bold', 6.5); tc(DORADO);
+    doc.text('APP ÁLVARO RÍOS — ¡Descárgala Gratis!', RX + RW / 2, rY + 4.5, { align: 'center' });
     fnt('normal', 5); tc([191, 191, 191]);
-    doc.text('Música, eventos, karaoke y comunidad de fans', RX + RW / 2, rY + 9, { align: 'center' });
+    doc.text('Música, eventos, karaoke y comunidad de fans', RX + RW / 2, rY + 8, { align: 'center' });
+    // Botones
+    const appBtnW1 = 24, appBtnW2 = 22, appBtnGap = 3, appBtnH = 4;
+    const appBtnX = RX + (RW - appBtnW1 - appBtnGap - appBtnW2) / 2;
+    const appBtnY = rY + 10.5;
+    fc([15, 15, 15]); dc([80, 80, 80]); doc.setLineWidth(0.2);
+    doc.roundedRect(appBtnX, appBtnY, appBtnW1, appBtnH, 0.8, 0.8, 'FD');
+    fnt('bold', 5); tc(BLANCO);
+    doc.text('▶ Google Play', appBtnX + appBtnW1 / 2, appBtnY + 2.7, { align: 'center' });
+    fc([15, 15, 15]); dc([80, 80, 80]);
+    doc.roundedRect(appBtnX + appBtnW1 + appBtnGap, appBtnY, appBtnW2, appBtnH, 0.8, 0.8, 'FD');
+    doc.text(' App Store', appBtnX + appBtnW1 + appBtnGap + appBtnW2 / 2, appBtnY + 2.7, { align: 'center' });
 
     // ════════════════════════════════════════════
     // 4. FOOTER  (270–297mm)
