@@ -200,12 +200,34 @@
 
   /* ── PRINT ── */
   @media print {
-    html, body { background: white; margin: 0; }
+    html, body {
+      background: #0F0F0F !important;
+      margin: 0 !important; padding: 0 !important;
+      width: 210mm !important; height: 297mm !important;
+      max-height: 297mm !important; overflow: hidden !important;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
     .toolbar, .modal-overlay { display: none !important; }
-    .page-wrapper { padding-top: 0 !important; margin: 0 !important; }
-    .page-scaler { padding: 0 !important; margin: 0 !important; }
-    .page-scaler { transform: none !important; width: 210mm !important; }
-    .page { width: 210mm !important; height: 297mm !important; min-height: 0 !important; max-height: 297mm !important; overflow: hidden !important; box-shadow: none; }
+    .page-wrapper {
+      padding: 0 !important; margin: 0 !important;
+      height: 297mm !important; max-height: 297mm !important;
+      overflow: hidden !important;
+    }
+    .page-scaler {
+      transform: none !important;
+      width: 210mm !important; height: 297mm !important;
+      max-height: 297mm !important; overflow: hidden !important;
+      padding: 0 !important; margin: 0 !important;
+    }
+    .page {
+      width: 210mm !important; height: 297mm !important;
+      min-height: 0 !important; max-height: 297mm !important;
+      overflow: hidden !important; box-shadow: none !important;
+      page-break-after: avoid !important; break-after: avoid !important;
+      page-break-inside: avoid !important; break-inside: avoid !important;
+    }
+    .body { overflow: hidden !important; }
+    .col-left, .col-right { overflow: hidden !important; }
     .destinatario-bloque { display: block !important; }
     .hero-img { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
