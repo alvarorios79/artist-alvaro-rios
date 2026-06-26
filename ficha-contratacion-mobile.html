@@ -201,9 +201,10 @@
   @media print {
     html, body { background: white; margin: 0; }
     .toolbar, .modal-overlay { display: none !important; }
-    .page-wrapper { padding-top: 0; }
+    .page-wrapper { padding-top: 0 !important; margin: 0 !important; }
+    .page-scaler { padding: 0 !important; margin: 0 !important; }
     .page-scaler { transform: none !important; width: 210mm !important; }
-    .page { width: 210mm; height: 297mm; overflow: hidden; box-shadow: none; }
+    .page { width: 210mm !important; height: 297mm !important; min-height: 0 !important; max-height: 297mm !important; overflow: hidden !important; box-shadow: none; }
     .destinatario-bloque { display: block !important; }
     .hero-img { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
