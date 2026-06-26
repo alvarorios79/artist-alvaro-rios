@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="format-detection" content="telephone=no,email=no,address=no">
 <meta name="viewport" content="width=794">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <title>Álvaro Ríos — Ficha de Contratación</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@300;400;500;600&display=swap');
@@ -243,7 +244,7 @@
 <!-- TOOLBAR FIJA NATIVA -->
 <div class="toolbar">
   <button class="tbtn tbtn-edit" onclick="abrirModal()">✏️ Personalizar</button>
-  <button class="tbtn tbtn-pdf" onclick="window.print()">📄 Guardar PDF</button>
+  <button class="tbtn tbtn-pdf" onclick="generarPDF()">📄 Guardar PDF</button>
 </div>
 
 <!-- MODAL NATIVO (bottom sheet) -->
@@ -419,6 +420,361 @@
 </div>
 
 <script>
+// ═══════════════════════════════════════════════════
+// GENERADOR PDF CON jsPDF
+// ═══════════════════════════════════════════════════
+async function loadImgB64(url) {
+  const r = await fetch(url);
+  const blob = await r.blob();
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function processHeroB64(url) {
+  const b64 = await loadImgB64(url);
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width; canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      // Simular brightness(0.52) + gradiente oscuro
+      ctx.filter = 'brightness(0.52)';
+      ctx.drawImage(img, 0, 0);
+      ctx.filter = 'none';
+      const grad = ctx.createLinearGradient(0, 0, 0, img.height);
+      grad.addColorStop(0.15, 'rgba(15,15,15,0)');
+      grad.addColorStop(0.55, 'rgba(15,15,15,0.45)');
+      grad.addColorStop(1.0,  'rgba(15,15,15,0.92)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, img.width, img.height);
+      resolve(canvas.toDataURL('image/jpeg', 0.9));
+    };
+    img.src = b64;
+  });
+}
+
+async function generarPDF() {
+  const btn = document.querySelector('.tbtn-pdf');
+  btn.innerHTML = '⏳ Generando...';
+  btn.disabled = true;
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+
+    // Paleta
+    const ROJO   = [192, 57, 43];
+    const NEGRO  = [15, 15, 15];
+    const GRIS   = [26, 26, 26];
+    const BLANCO = [255, 255, 255];
+    const DORADO = [201, 168, 76];
+    const PLATA  = [184, 190, 199];
+    const TEXTO  = [204, 204, 204];
+
+    // Cargar imágenes en paralelo
+    const [heroB64, showB64, logoB64] = await Promise.all([
+      processHeroB64('ficha-de-contratacion.png'),
+      loadImgB64('Fotos/2Y0A5026.JPG'),
+      loadImgB64('logo-sin-fondo.png'),
+    ]);
+
+    // Leer valores del formulario
+    const nombre    = document.getElementById('inp-nombre').value.trim();
+    const cargo     = document.getElementById('inp-cargo').value;
+    const municipio = document.getElementById('inp-municipio').value.trim();
+    const fecha     = document.getElementById('inp-fecha').value.trim();
+    const invValor  = document.getElementById('inv-valor').textContent;
+    const invLetras = document.getElementById('inv-letras').textContent;
+
+    // Helpers
+    const fc  = (rgb) => doc.setFillColor(...rgb);
+    const tc  = (rgb) => doc.setTextColor(...rgb);
+    const dc  = (rgb) => doc.setDrawColor(...rgb);
+    const fnt = (style, size) => { doc.setFont('helvetica', style); doc.setFontSize(size); };
+    const lhMM = (size, lhf = 1.5) => size * lhf * 0.352778;
+
+    const sectionTitle = (text, x, y, w) => {
+      fnt('bold', 5); tc(ROJO);
+      doc.text(text, x, y);
+      const tw = doc.getTextWidth(text);
+      dc([80, 25, 20]); doc.setLineWidth(0.2);
+      doc.line(x + tw + 1.5, y - 0.5, x + w, y - 0.5);
+      return y + 4;
+    };
+
+    // ════════════════════════════════════════════
+    // 1. HERO  (0–82mm)
+    // ════════════════════════════════════════════
+    doc.addImage(heroB64, 'JPEG', 0, 0, 210, 82);
+    // Barra roja izquierda
+    fc(ROJO); doc.rect(0, 0, 1.5, 82, 'F');
+
+    // Bloque destinatario (si se personalizó)
+    if (nombre) {
+      doc.addImage(logoB64, 'PNG', 4, 4, 9, 9);
+      const ft = fecha || new Date().toLocaleDateString('es-CO', {day:'numeric', month:'long', year:'numeric'});
+      fnt('normal', 5); tc([190, 190, 190]);
+      doc.text(ft.toUpperCase(), 15, 8);
+      fnt('bold', 7.5); tc(BLANCO);
+      doc.text(`${cargo}: ${nombre}`, 15, 12.5);
+      if (municipio) { fnt('normal', 6); tc([175, 175, 175]); doc.text(municipio, 15, 16.5); }
+      fnt('italic', 5); tc([155, 155, 155]);
+      const sal = doc.splitTextToSize('Reciba un cordial saludo. Me permito presentarle la siguiente propuesta artística.', 90);
+      doc.text(sal, 15, 20.5);
+    }
+
+    // Texto hero inferior
+    const HB = nombre ? 50 : 57;
+    fnt('normal', 5); tc(ROJO);
+    doc.text('PROPUESTA ARTÍSTICA · CONTRATACIÓN', 14, HB);
+
+    // Nombre: "Álvaro" blanco + "Ríos" rojo
+    doc.setFont('times', 'bold'); doc.setFontSize(30); tc(BLANCO);
+    const wAlv = doc.getTextWidth('Álvaro ');
+    doc.text('Álvaro ', 14, HB + 10);
+    tc(ROJO);
+    doc.text('Ríos', 14 + wAlv, HB + 10);
+
+    // Badge dorado
+    fnt('bold', 5.5);
+    const badgeTxt = 'EL BACHATERO #1 DE COLOMBIA';
+    const badgeW = doc.getTextWidth(badgeTxt) + 5;
+    fc(DORADO); doc.roundedRect(14, HB + 12, badgeW, 4.2, 0.8, 0.8, 'F');
+    tc(NEGRO); doc.text(badgeTxt, 16.5, HB + 15.2);
+
+    // Subtítulo
+    fnt('normal', 6.5); tc(PLATA);
+    doc.text('BACHATA · CUMBIA   |   COLOMBIA', 14, HB + 21);
+
+    // ════════════════════════════════════════════
+    // 2. STATS BAR  (82–95mm)
+    // ════════════════════════════════════════════
+    fc(ROJO); doc.rect(0, 82, 210, 13, 'F');
+
+    const STATS = [
+      ['+25','Años de carrera'], ['8','Álbumes'], ['#1','Bachatero Colombia'],
+      ['12','Países con su voz'], ['*','Múltiples Galardones']
+    ];
+    const SW = 42;
+    STATS.forEach(([num, label], i) => {
+      const cx = SW * i + SW / 2;
+      if (i > 0) { fc([220, 80, 60]); doc.rect(SW * i, 84, 0.3, 9, 'F'); }
+      doc.setFont('times', 'bold'); doc.setFontSize(12); tc(BLANCO);
+      doc.text(num, cx, 89.5, { align: 'center' });
+      fnt('bold', 4.5); tc([255, 230, 220]);
+      doc.text(label.toUpperCase(), cx, 92.8, { align: 'center' });
+    });
+
+    // ════════════════════════════════════════════
+    // 3. BODY  (95–270mm)
+    // ════════════════════════════════════════════
+    fc(NEGRO); doc.rect(0, 95, 210, 175, 'F');
+    // Divisor vertical
+    fc([35, 35, 35]); doc.rect(98.5, 97, 0.4, 171, 'F');
+
+    const LX = 12, LW = 85, RX = 101, RW = 97;
+    let lY = 100, rY = 100;
+
+    // ── COLUMNA IZQUIERDA ────────────────────────
+
+    // El Artista
+    lY = sectionTitle('EL ARTISTA', LX, lY, LW);
+    fnt('normal', 6.2); tc(TEXTO);
+    const bioPara1 = doc.splitTextToSize(
+      'Álvaro Ríos es cantautor colombiano de Pereira, Risaralda, con más de 25 años de carrera profesional. Pionero en introducir y popularizar la bachata en Colombia desde el Eje Cafetero, su talento es tan grande que su propio público lo bautizó "El Bachatero Número 1 de Colombia" — y puso a gozar a todas las emisoras del país con su música.', LW);
+    const bioPara2 = doc.splitTextToSize(
+      'Inició su carrera en Madrid, España con la Orquesta Sabor y llevó su voz a 12 países. Ha colaborado con Johnny Rivera, El Charrito Negro, Francy, Yelsid y Chico Jaramillo. Su videoclip "Equilibrio Sobrenatural" fue elegido Mejor Videoclip del Año en Colombia con reconocimiento en México. En 2026 lanzó "Y Si No Vuelves".', LW);
+    const bioLines = [...bioPara1, '', ...bioPara2];
+    doc.text(bioLines, LX, lY, { lineHeightFactor: 1.45 });
+    lY += bioLines.length * lhMM(6.2, 1.45) + 4;
+
+    // Géneros y Estilo
+    lY = sectionTitle('GÉNEROS Y ESTILO', LX, lY, LW);
+    const GENRES = [['Bachata',true],['Cumbia',false],['Salsa',false],['Romántico',false],['Bailable',false],['Familiar',false]];
+    let gx = LX, gy = lY;
+    fnt('bold', 5.5);
+    for (const [name, hl] of GENRES) {
+      const gw = doc.getTextWidth(name) + 4;
+      if (gx + gw > LX + LW) { gx = LX; gy += 5.5; }
+      if (hl) {
+        fc(ROJO); dc(ROJO); doc.setLineWidth(0.25);
+        doc.roundedRect(gx, gy - 2.2, gw, 3.8, 0.8, 0.8, 'FD'); tc(BLANCO);
+      } else {
+        fc([25, 25, 25]); dc([90, 28, 20]); doc.setLineWidth(0.25);
+        doc.roundedRect(gx, gy - 2.2, gw, 3.8, 0.8, 0.8, 'FD'); tc(PLATA);
+      }
+      doc.text(name, gx + 2, gy + 0.3);
+      gx += gw + 2;
+    }
+    lY = gy + 7.5;
+
+    // Show en Vivo
+    lY = sectionTitle('SHOW EN VIVO', LX, lY, LW);
+    const photoMaxH = 268 - lY;
+    if (photoMaxH > 5) {
+      doc.addImage(showB64, 'JPEG', LX, lY, LW, Math.min(photoMaxH, 52));
+    }
+
+    // ── COLUMNA DERECHA ──────────────────────────
+
+    // Descripción del Show
+    rY = sectionTitle('DESCRIPCIÓN DEL SHOW', RX, rY, RW);
+    // Quote box
+    fc([30, 14, 13]); dc(DORADO); doc.setLineWidth(0.3);
+    doc.roundedRect(RX, rY, RW, 15, 1, 1, 'FD');
+    fnt('italic', 6); tc([210, 210, 210]);
+    const qLines = doc.splitTextToSize(
+      '"La fusión única de bachata y cumbia con su agrupación en vivo, su puesta en escena y su versatilidad vocal lo hacen merecedor del título de El Bachatero #1 de Colombia."', RW - 4);
+    doc.text(qLines, RX + 2, rY + 4.5, { lineHeightFactor: 1.4 });
+    rY += 17;
+
+    // Show box
+    fc([20, 20, 20]); dc([45, 45, 45]); doc.setLineWidth(0.25);
+    doc.roundedRect(RX, rY, RW, 21, 1, 1, 'FD');
+    fc(ROJO); doc.rect(RX, rY, 1, 21, 'F');
+    fnt('bold', 6.5); tc(BLANCO);
+    doc.text('Show artístico para fiestas, eventos y festivales', RX + 3, rY + 4.5);
+    const SHOW_ITEMS = [
+      'Espectáculo de 60 a 90 minutos — bachata, cumbia y salsa',
+      'Repertorio de 8 álbumes + últimos lanzamientos 2026',
+      'Fiestas patronales, eventos privados y festivales — Público 18-50 años',
+    ];
+    fnt('normal', 5.5); tc(TEXTO);
+    SHOW_ITEMS.forEach((it, i) => {
+      fc(ROJO); doc.circle(RX + 5, rY + 8.5 + i * 4, 0.7, 'F');
+      tc(TEXTO); doc.text(it, RX + 7.5, rY + 9 + i * 4, { maxWidth: RW - 9 });
+    });
+    rY += 23;
+
+    // Logros
+    rY = sectionTitle('LOGROS Y RECONOCIMIENTOS', RX, rY, RW);
+    const LOGROS = [
+      ['Múltiples galardones y reconocimientos', '"Equilibrio Sobrenatural" — Mejor Videoclip del Año Colombia y México'],
+      ['Pionero de la Bachata en Colombia desde el Eje Cafetero', 'Puso a gozar a todas las emisoras del país con su música'],
+      ['Johnny Rivera · El Charrito Negro · Francy · Yelsid · Chico Jaramillo', 'Colaboraciones con los grandes de la música popular colombiana'],
+      ['8 álbumes de estudio', '3H Universo Digital · Sello AGR Music'],
+    ];
+    LOGROS.forEach(([title, sub]) => {
+      fnt('bold', 5.5); tc(DORADO);
+      const tLines = doc.splitTextToSize(title, RW - 6);
+      doc.text(tLines, RX + 4, rY + 2, { lineHeightFactor: 1.3 });
+      const tH = tLines.length * lhMM(5.5, 1.3);
+      fnt('normal', 5); tc([170, 170, 170]);
+      doc.text(sub, RX + 4, rY + 2 + tH + 0.8, { maxWidth: RW - 6 });
+      rY += tH + 5;
+    });
+    rY += 1;
+
+    // Inversión
+    rY = sectionTitle('INVERSIÓN', RX, rY, RW);
+    fc([30, 14, 13]); dc([100, 40, 35]); doc.setLineWidth(0.3);
+    doc.roundedRect(RX, rY, RW, 14, 1, 1, 'FD');
+    doc.setFont('times', 'bold'); doc.setFontSize(16); tc(BLANCO);
+    doc.text(invValor, RX + RW / 2, rY + 6, { align: 'center' });
+    fnt('normal', 5.5); tc(PLATA);
+    doc.text(invLetras, RX + RW / 2, rY + 9.5, { align: 'center' });
+    fnt('normal', 5); tc([160, 200, 160]);
+    doc.text('Transporte y viaticos incluidos en este valor.', RX + RW / 2, rY + 12.5, { align: 'center' });
+    rY += 16;
+
+    // Presencia Digital
+    rY = sectionTitle('PRESENCIA DIGITAL', RX, rY, RW);
+    const PLATFORMS = [
+      ['Spotify',     'Alvaro Rios',         [29,185,84],   'https://open.spotify.com/intl-es/artist/3w33wRQKOeeiJGAbfyBpf2'],
+      ['YouTube',     '@AlvaroRiosoficial',  [255,0,0],     'https://www.youtube.com/@AlvaroRiosoficial'],
+      ['Apple Music', 'Alvaro Rios',         [252,60,68],   'https://music.apple.com/search?term=alvaro+rios'],
+      ['Instagram',   '@alvarorioz',         [225,48,108],  'https://www.instagram.com/alvarorioz/'],
+      ['Facebook',    'Alvaro Rios Oficial', [24,119,242],  'https://www.facebook.com/profile.php?id=627886815'],
+      ['TikTok',      '@alvarorioz',         [105,201,208], 'https://www.tiktok.com/@alvarorioz'],
+    ];
+    const PW = (RW - 2) / 2;
+    PLATFORMS.forEach(([name, handle, color, url], i) => {
+      const col = i % 2, row = Math.floor(i / 2);
+      const px = RX + col * (PW + 2), py = rY + row * 8;
+      fc([22, 22, 22]); dc([40, 40, 40]); doc.setLineWidth(0.2);
+      doc.roundedRect(px, py, PW, 7, 0.8, 0.8, 'FD');
+      fc(color); doc.circle(px + 3, py + 3.5, 1.3, 'F');
+      fnt('bold', 6); tc(BLANCO);
+      doc.text(name, px + 6.5, py + 3.2);
+      fnt('normal', 4.8); tc(PLATA);
+      doc.text(handle, px + 6.5, py + 5.8);
+      doc.link(px, py, PW, 7, { url });
+    });
+    rY += 3 * 8 + 2;
+
+    // Sitio web
+    fc([22, 22, 22]); dc([45, 45, 45]); doc.setLineWidth(0.2);
+    doc.roundedRect(RX, rY, RW, 6, 0.8, 0.8, 'FD');
+    fnt('bold', 6); tc(BLANCO);
+    doc.text('www.alvarorios.com', RX + 8, rY + 3.5);
+    fnt('normal', 5); tc(PLATA);
+    doc.text('Sitio Oficial', RX + 8, rY + 5.8);
+    doc.link(RX, rY, RW, 6, { url: 'https://www.alvarorios.com' });
+    rY += 7.5;
+
+    // App
+    fc([28, 15, 12]); dc([100, 80, 30]); doc.setLineWidth(0.3);
+    doc.roundedRect(RX, rY, RW, 10, 1, 1, 'FD');
+    fnt('bold', 6); tc(DORADO);
+    doc.text('APP ALVARO RIOS — Descargala Gratis!', RX + RW / 2, rY + 4, { align: 'center' });
+    fnt('normal', 5); tc([191, 191, 191]);
+    doc.text('Musica, eventos, karaoke y comunidad de fans', RX + RW / 2, rY + 7.5, { align: 'center' });
+
+    // ════════════════════════════════════════════
+    // 4. FOOTER  (270–297mm)
+    // ════════════════════════════════════════════
+    const FY = 270;
+    fc(GRIS); doc.rect(0, FY, 210, 27, 'F');
+    fc(ROJO); doc.rect(0, FY, 210, 0.7, 'F');
+
+    // Contrataciones (izquierda)
+    fnt('bold', 5); tc(ROJO);
+    doc.text('CONTRATACIONES', 12, FY + 5);
+    fnt('normal', 5.5); tc([160, 160, 160]);
+    doc.text('Manager', 12, FY + 9.5);
+    fnt('bold', 7.5); tc(BLANCO);
+    doc.text('Martha Elena Serna A.', 12, FY + 14);
+    fnt('normal', 6.5); tc(BLANCO);
+    doc.text('Tel. 3003880244', 12, FY + 18.5);
+    doc.text('Martha79s@gmail.com', 12, FY + 22.5);
+
+    // Botón CTA WhatsApp (centro)
+    fc(ROJO); doc.roundedRect(81, FY + 4, 48, 19, 1.5, 1.5, 'F');
+    fnt('normal', 5.5); tc(BLANCO);
+    doc.text('CONTRATAR', 105, FY + 10, { align: 'center' });
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); tc(BLANCO);
+    doc.text('ALVARO RIOS', 105, FY + 15.5, { align: 'center' });
+    fnt('normal', 5); tc([255, 220, 215]);
+    doc.text('wa.link/y2z89o', 105, FY + 20, { align: 'center' });
+    doc.link(81, FY + 4, 48, 19, { url: 'https://wa.link/y2z89o' });
+
+    // Logo + AGR (derecha)
+    doc.addImage(logoB64, 'PNG', 166, FY + 2, 12, 12);
+    fnt('bold', 7); tc(BLANCO);
+    doc.text('AGR Music', 198, FY + 17, { align: 'right' });
+    fnt('normal', 5.5); tc(PLATA);
+    doc.text('Distribucion: 3H Universo Digital', 198, FY + 21, { align: 'right' });
+    doc.text('Pereira, Risaralda — Colombia', 198, FY + 24.5, { align: 'right' });
+
+    // ── Descargar ──────────────────────────────
+    const fn = nombre
+      ? `Propuesta-AlvaroRios-${nombre.replace(/\s+/g, '-')}.pdf`
+      : 'Propuesta-Artistica-Alvaro-Rios.pdf';
+    doc.save(fn);
+
+  } catch (err) {
+    console.error('Error generando PDF:', err);
+    alert('Error al generar el PDF: ' + err.message);
+  } finally {
+    btn.innerHTML = '📄 Guardar PDF';
+    btn.disabled = false;
+  }
+}
+
 function abrirModal() {
   document.getElementById('modalOverlay').classList.add('open');
 }
