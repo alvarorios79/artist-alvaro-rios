@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Álvaro Ríos — Ficha de Contratación</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@300;400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --rojo: #C0392B;
+    --negro: #0F0F0F;
+    --gris-oscuro: #1a1a1a;
+    --plata: #b8bec7;
+    --blanco: #ffffff;
+    --dorado: #c9a84c;
+  }
+
+  @page { size: A4 portrait; margin: 0; }
+
+  html, body {
+    background: #2a2a2a;
+    font-family: 'Inter', sans-serif;
+    color: var(--blanco);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    background: var(--negro);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    margin: 20px auto;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+  }
+
+  /* ── DESTINATARIO (overlay absoluto, mismo nivel que el nombre) ── */
+  .destinatario-bloque {
+    display: none;
+    position: absolute;
+    top: 8mm;
+    left: 12mm;
+    z-index: 10;
+    max-width: 52%;
+  }
+  .dest-box {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(10,10,10,0.0);
+    border-radius: 4px;
+    padding: 7px 12px;
+    line-height: 1.55;
+    backdrop-filter: blur(3px);
+  }
+  .dest-texto { flex: 1; }
+  .dest-logo-img { width: 36px; height: 36px; object-fit: contain; flex-shrink: 0; }
+  .dest-fecha { font-size: 8px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.45); margin-bottom: 3px; }
+  .dest-nombre { font-size: 13px; font-weight: 700; color: white; line-height: 1.2; }
+  .dest-lugar { font-size: 10px; color: rgba(255,255,255,0.7); margin-top: 2px; }
+  .dest-saludo { font-size: 8px; color: rgba(255,255,255,0.5); font-style: italic; margin-top: 4px; border-top: 1px solid rgba(255,255,255,0.12); padding-top: 4px; }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative;
+    height: 82mm;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .hero-img {
+    position: absolute; inset: 0;
+    background-image: url('ficha-de-contratacion.png');
+    background-size: cover;
+    background-position: 50% 30%;
+    filter: brightness(0.52);
+  }
+  .hero-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to bottom, transparent 20%, rgba(15,15,15,0.5) 60%, var(--negro) 100%);
+  }
+  .hero-left-bar {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 5px; background: var(--rojo);
+  }
+  .hero-logo { display: none; }
+  .hero-content {
+    position: absolute; bottom: 7mm; left: 12mm; right: 12mm;
+    z-index: 5;
+  }
+  .hero-tag {
+    font-size: 7.5px; font-weight: 600; letter-spacing: 4px;
+    text-transform: uppercase; color: var(--rojo); margin-bottom: 3px;
+  }
+  .hero-name {
+    font-family: 'Playfair Display', serif; font-size: 44px;
+    font-weight: 900; line-height: 1; color: var(--blanco);
+    text-shadow: 0 2px 20px rgba(0,0,0,0.8); letter-spacing: -1px;
+  }
+  .hero-name span { color: var(--rojo); }
+  .hero-badge {
+    display: inline-block; background: var(--dorado); color: #0F0F0F;
+    font-size: 7.5px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; padding: 2px 9px; border-radius: 2px;
+    margin-top: 5px; margin-bottom: 4px;
+  }
+  .hero-sub {
+    font-size: 10px; font-weight: 300; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--plata);
+  }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    background: var(--rojo); display: flex; align-items: center;
+    justify-content: space-around; padding: 5px 12mm; flex-shrink: 0;
+  }
+  .stat { text-align: center; }
+  .stat-num {
+    font-family: 'Playfair Display', serif; font-size: 17px;
+    font-weight: 700; color: var(--blanco); line-height: 1;
+  }
+  .stat-label {
+    font-size: 7px; font-weight: 500; letter-spacing: 1px;
+    text-transform: uppercase; color: rgba(255,255,255,0.82); margin-top: 1px;
+  }
+  .stat-divider { width: 1px; height: 24px; background: rgba(255,255,255,0.3); }
+
+  /* ── BODY ── */
+  .body {
+    padding: 6mm 12mm 5mm;
+    display: grid;
+    grid-template-columns: 1fr 1px 0.95fr;
+    gap: 0 8mm;
+    flex: 1;
+    min-height: 0;
+  }
+  .divider-v { background: rgba(255,255,255,0.1); align-self: stretch; }
+  .col-left  { display: flex; flex-direction: column; min-height: 0; }
+  .col-right { display: flex; flex-direction: column; min-height: 0; }
+
+  /* ── SECTION TITLE ── */
+  .st {
+    font-size: 7px; font-weight: 600; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--rojo); margin-bottom: 5px;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .st::after { content: ''; flex: 1; height: 1px; background: var(--rojo); opacity: 0.4; }
+
+  /* ── LEFT ── */
+  .bio-text {
+    font-size: 9px; line-height: 1.65;
+    color: rgba(255,255,255,0.8); margin-bottom: 5mm;
+  }
+  .bio-text strong { color: var(--blanco); font-weight: 600; }
+
+  .badges { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 5mm; }
+  .badge {
+    padding: 3px 8px; border: 1px solid rgba(192,57,43,0.5);
+    border-radius: 20px; font-size: 7.5px; font-weight: 500;
+    color: var(--plata);
+  }
+  .badge.hl { background: var(--rojo); border-color: var(--rojo); color: var(--blanco); }
+
+  .show-foto {
+    width: 100%; flex: 1; min-height: 28mm; object-fit: cover;
+    object-position: center 20%; border-radius: 3px; filter: brightness(0.9);
+  }
+
+  /* ── RIGHT ── */
+  .quote-box {
+    background: linear-gradient(135deg,rgba(192,57,43,0.15),rgba(201,168,76,0.08));
+    border: 1px solid rgba(201,168,76,0.3); border-radius: 4px;
+    padding: 5px 8px; margin-bottom: 3mm;
+    font-size: 8px; color: rgba(255,255,255,0.85); line-height: 1.5; font-style: italic;
+  }
+
+  .show-box {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    border-left: 3px solid var(--rojo); border-radius: 4px;
+    padding: 6px 8px; margin-bottom: 4mm;
+  }
+  .show-box-title { font-size: 9px; font-weight: 600; color: var(--blanco); margin-bottom: 4px; }
+  .si { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 3px; }
+  .sd { width: 4px; height: 4px; border-radius: 50%; background: var(--rojo); margin-top: 4px; flex-shrink: 0; }
+  .st2 { font-size: 8px; color: rgba(255,255,255,0.78); line-height: 1.4; }
+
+  /* Premios */
+  .pi { display: flex; gap: 6px; margin-bottom: 4px; align-items: flex-start; }
+  .pe { font-size: 10px; flex-shrink: 0; line-height: 1.3; }
+  .pt { font-size: 8px; color: rgba(255,255,255,0.78); line-height: 1.4; }
+  .pt strong { color: var(--dorado); font-weight: 600; display: block; font-size: 8.5px; }
+
+  /* Inversión */
+  .inversion-box {
+    background: linear-gradient(135deg,rgba(192,57,43,0.2),rgba(192,57,43,0.05));
+    border: 1px solid rgba(192,57,43,0.4); border-radius: 4px;
+    padding: 7px 10px; margin-bottom: 4mm;
+  }
+  .inv-valor {
+    font-family: 'Playfair Display', serif; font-size: 20px;
+    font-weight: 700; color: var(--blanco); line-height: 1;
+  }
+  .inv-letras { font-size: 7.5px; color: var(--plata); margin-top: 1px; }
+  .inv-nota { margin-top: 5px; font-size: 8px; color: rgba(255,255,255,0.8); line-height: 1.4; }
+
+  /* Plataformas */
+  .plat-wrap { flex: 1; display: flex; flex-direction: column; }
+  .plat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; flex: 1; align-content: start; }
+  .plat-item {
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 3px; padding: 6px 8px; font-size: 8.5px;
+    color: rgba(255,255,255,0.75); display: flex; align-items: center; gap: 5px;
+  }
+  .pd { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+  .sp{background:#1DB954;}.yt{background:#FF0000;}.am{background:#FC3C44;}
+  .ig{background:#E1306C;}.fb{background:#1877F2;}.tk{background:#69C9D0;}
+
+  /* ── FOOTER ── */
+  .footer {
+    background: var(--gris-oscuro); border-top: 2px solid var(--rojo);
+    padding: 4mm 12mm; display: flex; align-items: center;
+    justify-content: space-between; gap: 6mm; flex-shrink: 0;
+  }
+  .footer-label { font-size: 7px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--rojo); margin-bottom: 3px; }
+  .footer-contact { display: flex; flex-direction: column; gap: 3px; }
+  .contact-item { font-size: 9px; color: var(--blanco); font-weight: 500; display: flex; align-items: center; gap: 5px; }
+  .footer-cta {
+    background: var(--rojo); color: var(--blanco); padding: 8px 14px;
+    border-radius: 4px; text-align: center; flex-shrink: 0;
+  }
+  .footer-web { font-size: 8.5px; color: var(--plata); display: flex; flex-direction: column; gap: 2px; text-align: right; }
+
+  /* ── PRINT ── */
+  @media print {
+    html, body { background: var(--negro); margin: 0; }
+    .page { margin: 0; box-shadow: none; width: 210mm; height: 297mm; overflow: hidden; }
+    .fab-bar, .modal-overlay { display: none !important; }
+    .destinatario-bloque { display: block !important; }
+  }
+
+  /* ── FAB BAR ── */
+  .fab-bar {
+    position: fixed; bottom: 20px; right: 20px;
+    display: flex; flex-direction: column; gap: 8px; z-index: 9999;
+  }
+  .fab {
+    display: flex; align-items: center; gap: 8px;
+    padding: 11px 16px; border-radius: 30px; border: none;
+    cursor: pointer; font-family: 'Inter', sans-serif; font-size: 13px;
+    font-weight: 600; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    transition: transform 0.15s; white-space: nowrap;
+  }
+  .fab:hover { transform: translateY(-2px); }
+  .fab-edit { background: var(--rojo); color: white; }
+  .fab-pdf  { background: #222; color: white; border: 1px solid rgba(255,255,255,0.15); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.78); z-index: 10000;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: #1c1c1c; border: 1px solid rgba(255,255,255,0.12);
+    border-top: 3px solid var(--rojo); border-radius: 10px;
+    padding: 24px; width: 390px; max-width: 95vw;
+    font-family: 'Inter', sans-serif; max-height: 90vh; overflow-y: auto;
+  }
+  .modal h3 { font-size: 15px; color: white; margin-bottom: 3px; }
+  .modal .sub { font-size: 11px; color: rgba(255,255,255,0.45); margin-bottom: 16px; }
+  .modal label {
+    display: block; font-size: 9.5px; font-weight: 600;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--rojo); margin-bottom: 4px; margin-top: 12px;
+  }
+  .modal input, .modal select {
+    width: 100%; padding: 8px 11px;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 6px; color: white; font-size: 13px;
+    font-family: 'Inter', sans-serif; outline: none;
+  }
+  .modal input:focus, .modal select:focus { border-color: var(--rojo); }
+  .modal select option { background: #1c1c1c; }
+  .precio-hint { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 4px; }
+  .modal-actions { display: flex; gap: 8px; margin-top: 18px; }
+  .btn-aplicar {
+    flex: 1; padding: 10px; background: var(--rojo); color: white;
+    border: none; border-radius: 6px; font-size: 13px; font-weight: 700;
+    cursor: pointer; font-family: 'Inter', sans-serif;
+  }
+  .btn-cancelar {
+    padding: 10px 16px; background: transparent; color: rgba(255,255,255,0.5);
+    border: 1px solid rgba(255,255,255,0.15); border-radius: 6px;
+    font-size: 13px; cursor: pointer; font-family: 'Inter', sans-serif;
+  }
+</style>
+</head>
+<body>
+
+<!-- BARRA FLOTANTE -->
+<div class="fab-bar">
+  <button class="fab fab-edit" onclick="document.querySelector('.modal-overlay').classList.add('open')">
+    ✏️ Personalizar propuesta
+  </button>
+  <button class="fab fab-pdf" onclick="window.print()">
+    📄 Guardar / Imprimir PDF
+  </button>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <h3>Personalizar propuesta</h3>
+    <div class="sub">Los datos aparecerán en el documento al guardar el PDF.</div>
+
+    <label>Nombre completo</label>
+    <input id="inp-nombre" type="text" placeholder="Ej: Carlos Andrés Pérez">
+
+    <label>Cargo</label>
+    <select id="inp-cargo">
+      <option value="Alcalde">Alcalde</option>
+      <option value="Alcaldesa">Alcaldesa</option>
+      <option value="Gobernador">Gobernador</option>
+      <option value="Gobernadora">Gobernadora</option>
+      <option value="Secretario de Cultura">Secretario de Cultura</option>
+      <option value="Gerente">Gerente</option>
+      <option value="Director">Director</option>
+      <option value="Organizador de Eventos">Organizador de Eventos</option>
+      <option value="Empresario">Empresario</option>
+    </select>
+
+    <label>Municipio / Empresa</label>
+    <input id="inp-municipio" type="text" placeholder="Ej: Manizales, Caldas">
+
+    <label>Fecha (opcional)</label>
+    <input id="inp-fecha" type="text" placeholder="Ej: 25 de junio de 2026">
+
+    <label>Valor de la presentación</label>
+    <input id="inp-precio" type="text" placeholder="Ej: 15.000.000" value="12.000.000">
+    <div class="precio-hint">Solo el número con puntos. El texto "en letras" se ajusta automáticamente.</div>
+
+    <div class="modal-actions">
+      <button class="btn-cancelar" onclick="document.querySelector('.modal-overlay').classList.remove('open')">Cancelar</button>
+      <button class="btn-aplicar" onclick="aplicar()">✅ Aplicar al documento</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function numeroALetras(num) {
+  const limpioStr = num.replace(/\./g,'').replace(/\$/g,'').trim();
+  const n = parseInt(limpioStr, 10);
+  if (isNaN(n)) return '';
+  const millones = Math.floor(n / 1000000);
+  const miles = Math.floor((n % 1000000) / 1000);
+  const resto = n % 1000;
+  const unidades = ['','un','dos','tres','cuatro','cinco','seis','siete','ocho','nueve','diez',
+    'once','doce','trece','catorce','quince','dieciséis','diecisiete','dieciocho','diecinueve','veinte',
+    'veintiuno','veintidós','veintitrés','veinticuatro','veinticinco','veintiséis','veintisiete','veintiocho','veintinueve',
+    'treinta','treinta y uno','treinta y dos','treinta y tres','treinta y cuatro','treinta y cinco',
+    'treinta y seis','treinta y siete','treinta y ocho','treinta y nueve','cuarenta',
+    'cuarenta y uno','cuarenta y dos','cuarenta y tres','cuarenta y cuatro','cuarenta y cinco',
+    'cuarenta y seis','cuarenta y siete','cuarenta y ocho','cuarenta y nueve','cincuenta',
+    'cincuenta y uno','cincuenta y dos','cincuenta y tres','cincuenta y cuatro','cincuenta y cinco',
+    'cincuenta y seis','cincuenta y siete','cincuenta y ocho','cincuenta y nueve','sesenta',
+    'setenta','ochenta','noventa','cien','ciento'];
+  let texto = '';
+  if (millones > 0) texto += (millones === 1 ? 'un millón' : unidades[millones] + ' millones');
+  if (miles > 0) {
+    if (texto) texto += ' ';
+    texto += (miles === 1 ? 'mil' : unidades[miles] + ' mil');
+  }
+  if (resto > 0 && resto <= 100) {
+    if (texto) texto += ' ';
+    texto += unidades[resto];
+  }
+  return texto ? texto.charAt(0).toUpperCase() + texto.slice(1) + ' pesos m/cte' : '';
+}
+
+function formatoPrecio(val) {
+  const s = val.replace(/\./g,'').replace(/\$/g,'').trim();
+  const n = parseInt(s, 10);
+  if (isNaN(n)) return val;
+  return n.toLocaleString('es-CO');
+}
+
+function aplicar() {
+  const nombre    = document.getElementById('inp-nombre').value.trim();
+  const cargo     = document.getElementById('inp-cargo').value;
+  const municipio = document.getElementById('inp-municipio').value.trim();
+  const fecha     = document.getElementById('inp-fecha').value.trim();
+  const precioRaw = document.getElementById('inp-precio').value.trim();
+
+  // Actualizar precio
+  if (precioRaw) {
+    const precioFmt = formatoPrecio(precioRaw);
+    const letras = numeroALetras(precioRaw);
+    document.getElementById('inv-valor').textContent = '$' + precioFmt;
+    document.getElementById('inv-letras').textContent = letras;
+  }
+
+  // Actualizar destinatario
+  if (nombre || municipio) {
+    const fechaTexto = fecha || new Date().toLocaleDateString('es-CO',{day:'numeric',month:'long',year:'numeric'});
+    const bloque = document.getElementById('destinatario-bloque');
+    bloque.innerHTML = `
+      <div class="dest-box">
+        <img src="logo-sin-fondo.png" alt="AR" class="dest-logo-img">
+        <div class="dest-texto">
+          <div class="dest-fecha">${fechaTexto}</div>
+          <div class="dest-nombre">Señor(a) ${cargo}: ${nombre}</div>
+          ${municipio ? `<div class="dest-lugar">${municipio}</div>` : ''}
+          <div class="dest-saludo">Reciba un cordial saludo. Me permito presentarle la siguiente propuesta artística.</div>
+        </div>
+      </div>`;
+    bloque.style.display = 'block';
+  }
+
+  document.querySelector('.modal-overlay').classList.remove('open');
+}
+</script>
+
+<div class="page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-img"></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-left-bar"></div>
+    <img class="hero-logo" src="logo-sin-fondo.png" alt="Logo AR">
+    <!-- DESTINATARIO: overlay absoluto, mismo nivel que el nombre -->
+    <div class="destinatario-bloque" id="destinatario-bloque"></div>
+    <div class="hero-content">
+      <div class="hero-tag">Propuesta Artística · Contratación</div>
+      <div class="hero-name">Álvaro <span>Ríos</span></div>
+      <div class="hero-badge">⭐ El Bachatero #1 de Colombia</div>
+      <div class="hero-sub">Bachata · Cumbia &nbsp;|&nbsp; Colombia</div>
+    </div>
+  </div>
+
+  <!-- STATS BAR -->
+  <div class="stats-bar">
+    <div class="stat"><div class="stat-num">+25</div><div class="stat-label">Años de carrera</div></div>
+    <div class="stat-divider"></div>
+    <div class="stat"><div class="stat-num">8</div><div class="stat-label">Álbumes</div></div>
+    <div class="stat-divider"></div>
+    <div class="stat"><div class="stat-num">#1</div><div class="stat-label">Bachatero Colombia</div></div>
+    <div class="stat-divider"></div>
+    <div class="stat"><div class="stat-num">12</div><div class="stat-label">Países con su voz</div></div>
+    <div class="stat-divider"></div>
+    <div class="stat"><div class="stat-num">🏆</div><div class="stat-label">Múltiples Galardones</div></div>
+  </div>
+
+  <!-- BODY -->
+  <div class="body">
+
+    <!-- IZQUIERDA -->
+    <div class="col-left">
+      <div class="st">El Artista</div>
+      <p class="bio-text">
+        <strong>Álvaro Ríos</strong> es cantautor colombiano de <strong>Pereira, Risaralda</strong>, con más de <strong>25 años de carrera profesional</strong>. Pionero en introducir y popularizar la bachata en Colombia desde el Eje Cafetero, su talento es tan grande que su propio público lo bautizó <strong>"El Bachatero Número 1 de Colombia"</strong> — y puso a gozar a todas las emisoras del país con su música.
+        <br><br>
+        Inició su carrera en <strong>Madrid, España</strong> con la Orquesta Sabor y llevó su voz a <strong>12 países</strong>. Ha colaborado con <strong>Johnny Rivera, El Charrito Negro, Francy, Yelsid y Chico Jaramillo</strong>. Su videoclip <em>"Equilibrio Sobrenatural"</em> fue elegido <strong>Mejor Videoclip del Año en Colombia</strong> con reconocimiento en México. En 2026 lanzó <em>"Y Si No Vuelves"</em>.
+      </p>
+
+      <div class="st">Géneros y Estilo</div>
+      <div class="badges" style="margin-bottom:5mm;">
+        <div class="badge hl">Bachata</div>
+        <div class="badge">Cumbia</div>
+        <div class="badge">Salsa</div>
+        <div class="badge">Romántico</div>
+        <div class="badge">Bailable</div>
+        <div class="badge">Familiar</div>
+      </div>
+
+      <div class="st">Show en Vivo</div>
+      <div style="flex:1; min-height:22mm; overflow:hidden; border-radius:3px;">
+        <img src="Fotos/2Y0A5026.jpg" alt="Álvaro Ríos en escena" style="width:100%;height:100%;object-fit:cover;object-position:center 20%;filter:brightness(0.9);">
+      </div>
+    </div>
+
+    <!-- DIVISOR -->
+    <div class="divider-v"></div>
+
+    <!-- DERECHA -->
+    <div class="col-right">
+      <div class="st">Descripción del Show</div>
+      <div class="quote-box">
+        "La fusión única de bachata y cumbia con su agrupación en vivo, su puesta en escena y su versatilidad vocal lo hacen merecedor del título de <strong style="color:#f0c040;font-style:normal;">El Bachatero #1 de Colombia</strong>."
+      </div>
+      <div class="show-box">
+        <div class="show-box-title">Show artístico para fiestas, eventos y festivales</div>
+        <div class="si"><div class="sd"></div><div class="st2">Espectáculo de <strong>60 a 90 minutos</strong> — bachata, cumbia y salsa</div></div>
+        <div class="si"><div class="sd"></div><div class="st2">Repertorio de 8 álbumes + últimos lanzamientos 2026</div></div>
+        <div class="si"><div class="sd"></div><div class="st2">Fiestas patronales, eventos privados y festivales — Público 18 a 50 años</div></div>
+        <div class="si" style="margin-top:4px;padding-top:4px;border-top:1px solid rgba(255,255,255,0.08);">
+          <div class="sd" style="background:var(--dorado);"></div>
+          <div class="st2" style="color:rgba(255,220,100,0.9);"><strong style="color:#f0c040;">Opcional · Valor adicional:</strong> Pantalla LED, luces, efectos, bailarinas y cuerpo artístico. Se negocian por separado según presupuesto del evento.</div>
+        </div>
+      </div>
+
+      <div class="st">Logros y Reconocimientos</div>
+      <div style="margin-bottom:4mm; flex:1;">
+        <div class="pi"><div class="pe">🏆</div><div class="pt"><strong>Múltiples galardones y reconocimientos</strong>"Equilibrio Sobrenatural" — Mejor Videoclip del Año Colombia y México</div></div>
+        <div class="pi"><div class="pe">🎵</div><div class="pt"><strong>Pionero de la Bachata en Colombia desde el Eje Cafetero</strong>Puso a gozar a todas las emisoras del país con su música</div></div>
+        <div class="pi"><div class="pe">🤝</div><div class="pt"><strong>Johnny Rivera · El Charrito Negro · Francy · Yelsid · Chico Jaramillo</strong>Colaboraciones con los grandes de la música popular colombiana</div></div>
+        <div class="pi"><div class="pe">💿</div><div class="pt"><strong>8 álbumes de estudio</strong>3H Universo Digital · Sello AGR Music</div></div>
+      </div>
+
+      <div class="st">Inversión</div>
+      <div class="inversion-box">
+        <div class="inv-valor" id="inv-valor">$12.000.000</div>
+        <div class="inv-letras" id="inv-letras">Doce millones de pesos m/cte</div>
+        <div class="inv-nota">✅ Transporte y viáticos <strong style="color:var(--blanco);">incluidos</strong> en este valor.</div>
+      </div>
+
+      <div class="plat-wrap">
+        <div class="st">Presencia Digital</div>
+        <div class="plat-grid">
+          <div class="plat-item"><div class="pd sp"></div><div><div style="font-weight:600;color:white;">Spotify</div><div style="font-size:7px;opacity:0.6;">Álvaro Ríos</div></div></div>
+          <div class="plat-item"><div class="pd yt"></div><div><div style="font-weight:600;color:white;">YouTube</div><div style="font-size:7px;opacity:0.6;">@AlvaroRiosoficial</div></div></div>
+          <div class="plat-item"><div class="pd am"></div><div><div style="font-weight:600;color:white;">Apple Music</div><div style="font-size:7px;opacity:0.6;">Álvaro Ríos</div></div></div>
+          <div class="plat-item"><div class="pd ig"></div><div><div style="font-weight:600;color:white;">Instagram</div><div style="font-size:7px;opacity:0.6;">@alvarorioz</div></div></div>
+          <div class="plat-item"><div class="pd fb"></div><div><div style="font-weight:600;color:white;">Facebook</div><div style="font-size:7px;opacity:0.6;">Álvaro Ríos Oficial</div></div></div>
+          <div class="plat-item"><div class="pd tk"></div><div><div style="font-weight:600;color:white;">TikTok</div><div style="font-size:7px;opacity:0.6;">@alvarorioz</div></div></div>
+        </div>
+        <!-- Website -->
+        <div style="display:flex;align-items:center;gap:6px;margin-top:3px;padding:4px 7px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:3px;font-size:8px;">
+          <span style="font-size:11px;">🌐</span>
+          <div><span style="color:rgba(255,255,255,0.5);font-size:7px;letter-spacing:1px;text-transform:uppercase;">Sitio Oficial</span><div style="font-weight:600;color:white;">www.alvarorios.com</div></div>
+        </div>
+        <!-- App Banner -->
+        <div style="margin-top:3px;background:linear-gradient(135deg,rgba(192,57,43,0.25),rgba(201,168,76,0.15));border:1px solid rgba(201,168,76,0.35);border-radius:4px;padding:5px 8px;display:flex;align-items:center;gap:8px;">
+          <span style="font-size:20px;line-height:1;">📱</span>
+          <div style="flex:1;">
+            <div style="font-size:8.5px;font-weight:700;color:var(--dorado);letter-spacing:0.5px;">APP ÁLVARO RÍOS — ¡Descárgala Gratis!</div>
+            <div style="font-size:7.5px;color:rgba(255,255,255,0.75);margin-top:1px;">Música, eventos, karaoke y comunidad de fans</div>
+            <div style="display:flex;gap:6px;margin-top:3px;">
+              <span style="background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.2);border-radius:3px;padding:2px 7px;font-size:7px;color:white;font-weight:600;">▶ Google Play</span>
+              <span style="background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.2);border-radius:3px;padding:2px 7px;font-size:7px;color:white;font-weight:600;"> App Store</span>
+            </div>
+          </div>
+        </div>
+      </div><!-- /plat-wrap -->
+    </div><!-- /col-right -->
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div>
+      <div class="footer-label">Contrataciones</div>
+      <div class="footer-contact">
+        <div class="contact-item">📱 300-3880244</div>
+        <div class="contact-item">✉️ Martha79s@gmail.com</div>
+        <div class="contact-item">🌐 alvarorios.com</div>
+      </div>
+    </div>
+
+    <div class="footer-cta">
+      <div style="font-size:7.5px;letter-spacing:2px;margin-bottom:2px;">📲 CONTRATAR</div>
+      <div style="font-size:11px;letter-spacing:1px;font-weight:800;">ÁLVARO RÍOS</div>
+      <div style="font-size:7.5px;opacity:0.85;margin-top:2px;font-weight:400;">wa.link/y2z89o</div>
+    </div>
+
+    <div class="footer-web">
+      <img src="logo-sin-fondo.png" alt="Logo AR" style="width:12mm;height:12mm;object-fit:contain;margin-bottom:2px;align-self:flex-end;">
+      <span style="font-weight:600;color:white;font-size:9px;">AGR Music</span>
+      <span style="font-size:8px;">Distribución: 3H Universo Digital</span>
+      <span style="font-size:8px;">📍 Pereira, Risaralda — Colombia</span>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
