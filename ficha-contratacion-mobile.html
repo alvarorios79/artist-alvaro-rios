@@ -557,7 +557,7 @@ async function generarPDF() {
 
     const STATS = [
       ['+25','Años de carrera'], ['8','Álbumes'], ['#1','Bachatero Colombia'],
-      ['12','Países con su voz'], ['*','Múltiples Galardones']
+      ['12','Países con su voz'], ['★','Múltiples Galardones']
     ];
     const SW = 42;
     STATS.forEach(([num, label], i) => {
@@ -720,9 +720,9 @@ async function generarPDF() {
     fc([28, 15, 12]); dc([100, 80, 30]); doc.setLineWidth(0.3);
     doc.roundedRect(RX, rY, RW, 10, 1, 1, 'FD');
     fnt('bold', 6); tc(DORADO);
-    doc.text('APP ALVARO RIOS — Descargala Gratis!', RX + RW / 2, rY + 4, { align: 'center' });
+    doc.text('APP ÁLVARO RÍOS — ¡Descárgala Gratis!', RX + RW / 2, rY + 4, { align: 'center' });
     fnt('normal', 5); tc([191, 191, 191]);
-    doc.text('Musica, eventos, karaoke y comunidad de fans', RX + RW / 2, rY + 7.5, { align: 'center' });
+    doc.text('Música, eventos, karaoke y comunidad de fans', RX + RW / 2, rY + 7.5, { align: 'center' });
 
     // ════════════════════════════════════════════
     // 4. FOOTER  (270–297mm)
@@ -747,7 +747,7 @@ async function generarPDF() {
     fnt('normal', 5.5); tc(BLANCO);
     doc.text('CONTRATAR', 105, FY + 10, { align: 'center' });
     doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); tc(BLANCO);
-    doc.text('ALVARO RIOS', 105, FY + 15.5, { align: 'center' });
+    doc.text('ÁLVARO RÍOS', 105, FY + 15.5, { align: 'center' });
     fnt('normal', 5); tc([255, 220, 215]);
     doc.text('wa.link/y2z89o', 105, FY + 20, { align: 'center' });
     doc.link(81, FY + 4, 48, 19, { url: 'https://wa.link/y2z89o' });
@@ -757,14 +757,27 @@ async function generarPDF() {
     fnt('bold', 7); tc(BLANCO);
     doc.text('AGR Music', 198, FY + 17, { align: 'right' });
     fnt('normal', 5.5); tc(PLATA);
-    doc.text('Distribucion: 3H Universo Digital', 198, FY + 21, { align: 'right' });
+    doc.text('Distribución: 3H Universo Digital', 198, FY + 21, { align: 'right' });
     doc.text('Pereira, Risaralda — Colombia', 198, FY + 24.5, { align: 'right' });
 
-    // ── Descargar ──────────────────────────────
+    // ── Compartir / Descargar ───────────────────
     const fn = nombre
       ? `Propuesta-AlvaroRios-${nombre.replace(/\s+/g, '-')}.pdf`
       : 'Propuesta-Artistica-Alvaro-Rios.pdf';
-    doc.save(fn);
+
+    const pdfBlob = doc.output('blob');
+    const pdfFile = new File([pdfBlob], fn, { type: 'application/pdf' });
+
+    // iOS: Web Share API entrega el archivo real (no un link)
+    if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+      await navigator.share({
+        files: [pdfFile],
+        title: 'Propuesta Artística — Álvaro Ríos',
+      });
+    } else {
+      // Desktop / navegadores sin soporte: descarga directa
+      doc.save(fn);
+    }
 
   } catch (err) {
     console.error('Error generando PDF:', err);
