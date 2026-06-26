@@ -184,6 +184,10 @@
   .inv-valor { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--blanco); line-height: 1; }
   .inv-letras { font-size: 7.5px; color: var(--plata); margin-top: 1px; }
   .inv-nota { margin-top: 5px; font-size: 8px; color: rgba(255,255,255,0.8); line-height: 1.4; }
+  .inv-desglose { margin-top: 5px; }
+  .inv-divider { height: 1px; background: rgba(255,255,255,0.15); margin: 3px 0; }
+  .inv-row { display:flex; justify-content:space-between; font-size:7.5px; color:var(--plata); padding: 0 2px; }
+  .inv-total-row { display:flex; justify-content:space-between; font-size:9px; font-weight:700; color:var(--blanco); padding: 0 2px; }
 
   .plat-wrap { flex: 1; display: flex; flex-direction: column; }
   .plat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; align-content: start; }
@@ -280,6 +284,10 @@
     <input id="inp-precio" type="text" placeholder="Ej: 15.000.000" value="12.000.000" autocomplete="off" inputmode="numeric">
     <div class="precio-hint">Solo el número con puntos. El texto en letras se ajusta automáticamente.</div>
 
+    <label>Logística y transporte especial <span style="color:rgba(255,255,255,0.4);font-weight:400;">(opcional)</span></label>
+    <input id="inp-logistica" type="text" placeholder="Ej: 2.000.000 — dejar vacío si está incluido" autocomplete="off" inputmode="numeric">
+    <div class="precio-hint">Solo para destinos fuera de Risaralda, Armenia y Norte del Valle.</div>
+
     <div class="modal-actions">
       <button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
       <button class="btn-aplicar" onclick="aplicar()">✅ Aplicar</button>
@@ -362,7 +370,20 @@
           <div class="inversion-box">
             <div class="inv-valor" id="inv-valor">$12.000.000</div>
             <div class="inv-letras" id="inv-letras">Doce millones de pesos m/cte</div>
-            <div class="inv-nota">✅ Transporte y viáticos <strong style="color:var(--blanco);">incluidos</strong> en este valor.</div>
+            <!-- Desglose logística — visible solo cuando se llena el campo -->
+            <div class="inv-desglose" id="inv-desglose" style="display:none;">
+              <div class="inv-divider"></div>
+              <div class="inv-row">
+                <span>+ Logística y transporte especial</span>
+                <span id="inv-log-val"></span>
+              </div>
+              <div class="inv-divider"></div>
+              <div class="inv-total-row">
+                <span>TOTAL</span>
+                <span id="inv-total"></span>
+              </div>
+            </div>
+            <div class="inv-nota" id="inv-nota">✅ Incluye transporte en zona <strong style="color:var(--blanco);">Eje Cafetero y Norte del Valle.</strong></div>
           </div>
           <div class="plat-wrap">
             <div class="st">Presencia Digital</div>
@@ -511,6 +532,9 @@ async function generarPDF() {
     const fecha     = document.getElementById('inp-fecha').value.trim();
     const invValor  = document.getElementById('inv-valor').textContent;
     const invLetras = document.getElementById('inv-letras').textContent;
+    const hasLog    = document.getElementById('inv-desglose').style.display !== 'none';
+    const invLogVal = document.getElementById('inv-log-val').textContent;
+    const invTotal  = document.getElementById('inv-total').textContent;
 
     // Helpers
     const fc  = (rgb) => doc.setFillColor(...rgb);
@@ -697,14 +721,43 @@ async function generarPDF() {
     // Inversión
     rY = sectionTitle('INVERSIÓN', RX, rY, RW);
     fc([30, 14, 13]); dc([100, 40, 35]); doc.setLineWidth(0.3);
-    doc.roundedRect(RX, rY, RW, 14, 1, 1, 'FD');
-    doc.setFont('times', 'bold'); doc.setFontSize(16); tc(BLANCO);
-    doc.text(invValor, RX + RW / 2, rY + 6, { align: 'center' });
-    fnt('normal', 5.5); tc(PLATA);
-    doc.text(invLetras, RX + RW / 2, rY + 9.5, { align: 'center' });
-    fnt('normal', 5); tc([160, 200, 160]);
-    doc.text('Transporte y viaticos incluidos en este valor.', RX + RW / 2, rY + 12.5, { align: 'center' });
-    rY += 16;
+
+    if (hasLog) {
+      // Caja expandida con desglose logística
+      doc.roundedRect(RX, rY, RW, 22, 1, 1, 'FD');
+      // Caché artístico
+      doc.setFont('times', 'bold'); doc.setFontSize(15); tc(BLANCO);
+      doc.text(invValor, RX + RW / 2, rY + 5.5, { align: 'center' });
+      fnt('normal', 5.5); tc(PLATA);
+      doc.text(invLetras, RX + RW / 2, rY + 8.5, { align: 'center' });
+      // Separador
+      dc([80,40,35]); doc.setLineWidth(0.3);
+      doc.line(RX + 5, rY + 11, RX + RW - 5, rY + 11);
+      // Logística
+      fnt('normal', 5.5); tc(PLATA);
+      doc.text('+ Logística y transporte especial', RX + 5, rY + 14);
+      fnt('bold', 5.5); tc([220, 180, 100]);
+      doc.text(invLogVal, RX + RW - 5, rY + 14, { align: 'right' });
+      // Separador total
+      dc([80,40,35]);
+      doc.line(RX + 5, rY + 16, RX + RW - 5, rY + 16);
+      // Total
+      fnt('bold', 7); tc(BLANCO);
+      doc.text('TOTAL', RX + 5, rY + 20);
+      doc.setFont('times', 'bold'); doc.setFontSize(14);
+      doc.text(invTotal, RX + RW - 5, rY + 20, { align: 'right' });
+      rY += 24;
+    } else {
+      // Caja simple — zona base
+      doc.roundedRect(RX, rY, RW, 15, 1, 1, 'FD');
+      doc.setFont('times', 'bold'); doc.setFontSize(16); tc(BLANCO);
+      doc.text(invValor, RX + RW / 2, rY + 6, { align: 'center' });
+      fnt('normal', 5.5); tc(PLATA);
+      doc.text(invLetras, RX + RW / 2, rY + 9.5, { align: 'center' });
+      fnt('normal', 5); tc([160, 200, 160]);
+      doc.text('Incluye transporte — Eje Cafetero y Norte del Valle.', RX + RW / 2, rY + 13, { align: 'center' });
+      rY += 17;
+    }
 
     // Presencia Digital
     rY = sectionTitle('PRESENCIA DIGITAL', RX, rY, RW);
@@ -851,11 +904,27 @@ function aplicar() {
   const fecha  = document.getElementById('inp-fecha').value.trim();
   const precio = document.getElementById('inp-precio').value.trim();
 
+  const logistica = document.getElementById('inp-logistica').value.trim();
+
   if (precio) {
-    const n = parseInt(precio.replace(/\./g,''), 10);
-    if (!isNaN(n)) {
-      document.getElementById('inv-valor').textContent = '$' + n.toLocaleString('es-CO');
+    const nBase = parseInt(precio.replace(/\./g,''), 10);
+    if (!isNaN(nBase)) {
+      document.getElementById('inv-valor').textContent = '$' + nBase.toLocaleString('es-CO');
       document.getElementById('inv-letras').textContent = numeroALetras(precio);
+
+      if (logistica) {
+        const nLog = parseInt(logistica.replace(/\./g,''), 10);
+        if (!isNaN(nLog)) {
+          const nTotal = nBase + nLog;
+          document.getElementById('inv-log-val').textContent = '$' + nLog.toLocaleString('es-CO');
+          document.getElementById('inv-total').textContent   = '$' + nTotal.toLocaleString('es-CO');
+          document.getElementById('inv-desglose').style.display = 'block';
+          document.getElementById('inv-nota').innerHTML = '📍 Logística y transporte especial cotizados según destino.';
+        }
+      } else {
+        document.getElementById('inv-desglose').style.display = 'none';
+        document.getElementById('inv-nota').innerHTML = '✅ Incluye transporte en zona <strong style="color:var(--blanco);">Eje Cafetero y Norte del Valle.</strong>';
+      }
     }
   }
 
