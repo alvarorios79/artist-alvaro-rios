@@ -544,12 +544,12 @@ async function generarPDF() {
     const lhMM = (size, lhf = 1.5) => size * lhf * 0.352778;
 
     const sectionTitle = (text, x, y, w) => {
-      fnt('bold', 5); tc(ROJO);
+      fnt('bold', 7); tc(ROJO);
       doc.text(text, x, y);
       const tw = doc.getTextWidth(text);
-      dc([80, 25, 20]); doc.setLineWidth(0.2);
-      doc.line(x + tw + 1.5, y - 0.5, x + w, y - 0.5);
-      return y + 4;
+      dc([80, 25, 20]); doc.setLineWidth(0.25);
+      doc.line(x + tw + 1.5, y - 0.8, x + w, y - 0.8);
+      return y + 5.5;
     };
 
     // ════════════════════════════════════════════
@@ -573,29 +573,28 @@ async function generarPDF() {
       doc.text(sal, 15, 20.5);
     }
 
-    // Texto hero inferior — posición desde el fondo del hero (bottom: 7mm Mac)
-    // Con nombre: el bloque destinatario ocupa y=4–25, así que bajamos el contenido
-    const HB = nombre ? 44 : 52;
-    fnt('bold', 6.5); tc(ROJO);
+    // Texto hero inferior — bottom: ~7mm desde el fondo del hero
+    const HB = nombre ? 42 : 46;
+    fnt('bold', 7); tc(ROJO);
     doc.text('PROPUESTA ARTÍSTICA · CONTRATACIÓN', 14, HB);
 
-    // Nombre: "Álvaro" blanco + "Ríos" rojo  (36pt ≈ 44px del HTML Mac)
-    doc.setFont('times', 'bold'); doc.setFontSize(36); tc(BLANCO);
+    // Nombre: "Álvaro" blanco + "Ríos" rojo  (42pt — máxima presencia)
+    doc.setFont('times', 'bold'); doc.setFontSize(42); tc(BLANCO);
     const wAlv = doc.getTextWidth('Álvaro ');
-    doc.text('Álvaro ', 14, HB + 13);
+    doc.text('Álvaro ', 14, HB + 15);
     tc(ROJO);
-    doc.text('Ríos', 14 + wAlv, HB + 13);
+    doc.text('Ríos', 14 + wAlv, HB + 15);
 
-    // Badge dorado — más grande
-    fnt('bold', 7);
+    // Badge dorado
+    fnt('bold', 8);
     const badgeTxt = 'EL BACHATERO #1 DE COLOMBIA';
-    const badgeW = doc.getTextWidth(badgeTxt) + 6;
-    fc(DORADO); doc.roundedRect(14, HB + 15.5, badgeW, 5.5, 1, 1, 'F');
-    tc(NEGRO); doc.text(badgeTxt, 17, HB + 19.5);
+    const badgeW = doc.getTextWidth(badgeTxt) + 7;
+    fc(DORADO); doc.roundedRect(14, HB + 17.5, badgeW, 6.5, 1, 1, 'F');
+    tc(NEGRO); doc.text(badgeTxt, 17.5, HB + 22);
 
     // Subtítulo
-    fnt('normal', 9); tc(PLATA);
-    doc.text('BACHATA · CUMBIA   |   COLOMBIA', 14, HB + 24);
+    fnt('normal', 10.5); tc(PLATA);
+    doc.text('BACHATA · CUMBIA   |   COLOMBIA', 14, HB + 28);
 
     // ════════════════════════════════════════════
     // 2. STATS BAR  (82–95mm)
@@ -610,10 +609,10 @@ async function generarPDF() {
     STATS.forEach(([num, label], i) => {
       const cx = SW * i + SW / 2;
       if (i > 0) { fc([220, 80, 60]); doc.rect(SW * i, 84, 0.3, 9, 'F'); }
-      doc.setFont('times', 'bold'); doc.setFontSize(12); tc(BLANCO);
+      doc.setFont('times', 'bold'); doc.setFontSize(14); tc(BLANCO);
       doc.text(num, cx, 89.5, { align: 'center' });
-      fnt('bold', 4.5); tc([255, 230, 220]);
-      doc.text(label.toUpperCase(), cx, 92.8, { align: 'center' });
+      fnt('bold', 5.5); tc([255, 230, 220]);
+      doc.text(label.toUpperCase(), cx, 93, { align: 'center' });
     });
 
     // ════════════════════════════════════════════
@@ -714,7 +713,7 @@ async function generarPDF() {
       const tH = tLines.length * lhMM(5.5, 1.3);
       fnt('normal', 5); tc([170, 170, 170]);
       doc.text(sub, RX + 4, rY + 2 + tH + 1, { maxWidth: RW - 6 });
-      rY += tH + 6.5;
+      rY += tH + 5;
     });
     rY += 1;
 
@@ -841,13 +840,14 @@ async function generarPDF() {
     doc.text('wa.link/y2z89o', 105, FY + 20, { align: 'center' });
     doc.link(81, FY + 4, 48, 19, { url: 'https://wa.link/y2z89o' });
 
-    // Logo + AGR (derecha)
-    doc.addImage(logoB64, 'PNG', 166, FY + 2, 12, 12);
-    fnt('bold', 7); tc(BLANCO);
-    doc.text('AGR Music', 198, FY + 17, { align: 'right' });
+    // Logo ENCIMA de AGR — alineado a la derecha igual que el texto
+    const LOGO_W = 14, LOGO_H = 14;
+    doc.addImage(logoB64, 'PNG', 198 - LOGO_W, FY + 1, LOGO_W, LOGO_H);
+    fnt('bold', 7.5); tc(BLANCO);
+    doc.text('AGR Music', 198, FY + 17.5, { align: 'right' });
     fnt('normal', 5.5); tc(PLATA);
-    doc.text('Distribución: 3H Universo Digital', 198, FY + 21, { align: 'right' });
-    doc.text('Pereira, Risaralda — Colombia', 198, FY + 24.5, { align: 'right' });
+    doc.text('Distribución: 3H Universo Digital', 198, FY + 21.5, { align: 'right' });
+    doc.text('Pereira, Risaralda — Colombia', 198, FY + 25, { align: 'right' });
 
     // ── Compartir / Descargar ───────────────────
     const fn = nombre
