@@ -1,4 +1,18 @@
-# Artist Álvaro Ríos — Memoria de Claude
+# Álvaro Ríos — Proyecto Unificado
+
+Este repositorio contiene todos los proyectos digitales del artista Álvaro Ríos.
+
+## Estructura del proyecto
+
+```
+alvaro-rios/
+├── CLAUDE.md                        ← este archivo (memoria compartida)
+├── artista/                         ← ficha de contratación, fotos, logos, assets
+├── app/                             ← App móvil React Native / Expo (fans)
+└── show-visual/                     ← Show visual / visualizador escénico
+```
+
+---
 
 ## El artista
 **Álvaro Ríos** (nombre completo: Álvaro Fernando Gutiérrez Ríos)
@@ -8,10 +22,10 @@ Pionero en introducir y popularizar la bachata en Colombia, especialmente en el 
 
 ## Géneros musicales
 - Principal: **Bachata**
-- Secundarios: **Cumbia**, **Salsa**
+- Secundarios: **Cumbia**, **Tropical**
 
 ## Discografía
-- **8 álbumes** lanzados (detalle completo en la app `alvaro-rios-app`)
+- **8 álbumes** lanzados
 - Álbum destacado: **"Equilibrio Sobrenatural"** — videoclip ganó mejor del año en Colombia y reconocimiento en México
 - Último lanzamiento (2026): **"Y Si No Vuelves"** — canción + videoclip recién publicados
 
@@ -55,6 +69,7 @@ Pionero en introducir y popularizar la bachata en Colombia, especialmente en el 
   2. **3D oscuro** — embossed negro sobre fondo oscuro
   3. **3D Premium** — rojo/blanco/plata con textura fibra de carbono en letras
 - Colores principales: rojo `#C0392B`, negro `#0F0F0F`, plata/blanco
+- Archivos: `artista/logo-sin-fondo.png`, `artista/Logo cuadrado 1024 fondo.png`
 
 ## Público objetivo
 - Edad: **18 a 50 años**
@@ -79,8 +94,41 @@ Pionero en introducir y popularizar la bachata en Colombia, especialmente en el 
 - Regresó a Colombia e introdujo la bachata en el Eje Cafetero contra el escepticismo inicial
 - Las emisoras que lo rechazaron terminaron solicitando sus discos
 
-## Proyectos digitales relacionados
-- **App móvil Álvaro Ríos** → `alvaro-rios-app/`
-  - App para fans: música, karaoke, tienda, eventos, comunidad
-  - Sistema de puntos: **Romos**
-  - Desarrollada en React Native / Expo SDK 54
+---
+
+## Proyecto: artista/
+Ficha de contratación, assets visuales y documentos para booking.
+
+**Archivos clave:**
+- `ficha-contratacion-mobile.html` — ficha interactiva (versión GitHub Pages / móvil)
+- `ficha-contratacion-alvaro-rios.html` — versión para Mac / impresión
+- `guion-video-propuesta-alvaro-rios.md` — guion de video propuesta artística
+- `ficha-de-contratacion.png` — foto hero del header
+- `Fotos/` — banco de fotos profesionales
+- `logo-sin-fondo.png`, `Logo cuadrado 1024 fondo.png` — logos
+
+**GitHub Pages:** https://alvarorios79.github.io/artist-alvaro-rios/ficha-contratacion-mobile.html
+**Repositorio:** https://github.com/alvarorios79/artist-alvaro-rios
+
+**Funcionalidades ficha:**
+- Genera PDF con jsPDF (clickable, vectorial)
+- Modal de personalización: nombre del cliente, precio, logística opcional
+- Web Share API para compartir PDF como archivo en iOS
+- Desglose dinámico de inversión (precio base + logística si aplica)
+
+---
+
+## Proyecto: app/
+App móvil para fans de Álvaro Ríos.
+
+**Stack:** React Native / Expo SDK 54
+**Funcionalidades:** música, karaoke, tienda, eventos, comunidad
+**Sistema de puntos:** Romos
+
+---
+
+## Proyecto: show-visual/
+Show visual / visualizador escénico para presentaciones en vivo.
+
+**Archivos clave:**
+- `VOLVEREMOS_FEST_VIDEO_v3.mp4` — video principal del show visual
